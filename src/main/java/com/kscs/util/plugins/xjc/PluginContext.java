@@ -207,7 +207,9 @@ public class PluginContext extends Plugin {
 	}
 
 	public static Class<?> findInnerClass(final Class<?> outer, final String name) {
+		System.out.println("findInnerClass(outer: " + outer +", name: "+name+"), outer.getDeclaredClasses.length "+outer.getDeclaredClasses().length);
 		for (final Class<?> innerClass : outer.getDeclaredClasses()) {
+			System.out.println("!!!!!findInnerClass(outer: " + outer +", name: "+name+"): innerClass: "+innerClass);
 			if (name.equals(innerClass.getSimpleName())) {
 				return innerClass;
 			}

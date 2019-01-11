@@ -51,8 +51,11 @@ public class DefinedClassOutline implements DefinedTypeOutline {
 		if (this.classOutline.getSuperClass() != null) {
 			this.superClass = new DefinedClassOutline(this.pluginContext, this.classOutline.getSuperClass());
 		} else {
+
 			try {
 				final Class<?> ungeneratedSuperClass = Class.forName(this.classOutline.implClass._extends().fullName());
+
+				System.out.println("IN THE ELSE FOR THE REFERENCED CLASS OUTLINE, wtf is+"+ungeneratedSuperClass.toString()+", name: "+this.classOutline.implClass._extends().fullName());
 				if (Object.class.equals(ungeneratedSuperClass)) {
 					this.superClass = null;
 				} else {

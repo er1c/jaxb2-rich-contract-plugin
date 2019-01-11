@@ -103,7 +103,7 @@ class BuilderGenerator {
 		this.builderClass = new GenerifiedClass(builderOutline.getDefinedBuilderClass(), BuilderGenerator.PARENT_BUILDER_TYPE_PARAMETER_NAME);
 		this.resources = ResourceBundle.getBundle(BuilderGenerator.class.getName());
 		this.implement = !this.builderClass.raw.isInterface();
-		if (builderOutline.getClassOutline().getSuperClass() == null) {
+		if (builderOutline.getClassOutline().getSuperClass() == null &&  builderOutline.getClassOutline().getSuperClass().getImplClass() != classOutline.getImplClass()) {
 			final JMethod endMethod = this.builderClass.raw.method(JMod.PUBLIC, this.builderClass.typeParam, this.settings.getEndMethodName());
 			if (this.implement) {
 				this.parentBuilderField = this.builderClass.raw.field(JMod.PROTECTED | JMod.FINAL, this.builderClass.typeParam, BuilderGenerator.PARENT_BUILDER_PARAM_NAME);
@@ -471,6 +471,7 @@ class BuilderGenerator {
 		}
 	}
 
+
 	JDefinedClass generateExtendsClause(final BuilderOutline superClassBuilder) {
 		return this.builderClass.raw._extends(superClassBuilder.getBuilderClass().narrow(this.builderClass.typeParam));
 	}
@@ -750,8 +751,11 @@ class BuilderGenerator {
 	}
 
 	BuilderOutline getBuilderDeclaration(final JType type) {
+		System.out.println("getBuilderDeclaration(type: "+type+")");
 		BuilderOutline builderOutline = this.builderOutlines.get(type.fullName());
 		if (builderOutline == null) {
+			System.out.println("was null");
+
 			builderOutline = getReferencedBuilderOutline(type);
 		}
 		return builderOutline;
@@ -797,20 +801,31 @@ class BuilderGenerator {
 	}
 
 	private BuilderOutline getReferencedBuilderOutline(final JType type) {
+		System.out.println("getReferencedBuilderOutline(type: "+type+")");
+
 		BuilderOutline builderOutline = null;
 		if (this.pluginContext.getClassOutline(type) == null && this.pluginContext.getEnumOutline(type) == null && type.isReference() && !type.isPrimitive() && !type.isArray() && type.fullName().contains(".")) {
+
 			final Class<?> runtimeParentClass;
 			try {
 				runtimeParentClass = Class.forName(type.binaryName());
 			} catch (final ClassNotFoundException e) {
+				System.out.println("Couldn't find the runtimeParentClass...");
 				return null;
 			}
+			System.out.println("getReferencedBuilderOutline(runtimeParentClass: "+runtimeParentClass+")");
 			final JClass builderClass = reflectRuntimeInnerClass(runtimeParentClass, this.settings.getBuilderClassName());
 			if (builderClass != null) {
 				final ReferencedClassOutline referencedClassOutline = new ReferencedClassOutline(this.pluginContext.codeModel, runtimeParentClass);
 				builderOutline = new BuilderOutline(referencedClassOutline, builderClass);
+			} else {
+				System.out.println("builderClass null! "+builderClass);
 			}
+		} else {
+			System.out.println("WTF else!");
 		}
+
+		System.out.println("getReferencedBuilderOutline(type: "+type+") returning: "+builderOutline);
 		return builderOutline;
 	}
 
@@ -818,10 +833,14 @@ class BuilderGenerator {
 		final JClass parentClass = this.pluginContext.codeModel.ref(runtimeParentClass);
 		final String innerClassName = className.getName(runtimeParentClass.isInterface());
 		final Class<?> runtimeInnerClass = PluginContext.findInnerClass(runtimeParentClass, innerClassName);
+		System.out.println("reflectRuntimeInnerClass(runtimeParentClass: "+runtimeParentClass+", className: "+className +"), parentClass = "+parentClass+", innerClassName = " + innerClassName +"  runtimeInnerClass: "+runtimeInnerClass);
 		if (runtimeInnerClass != null) {
+			System.out.println("runtimeInnerClass not null!"+runtimeInnerClass);
 			final JClass innerSuperClass = runtimeParentClass.getSuperclass() != null ? this.pluginContext.codeModel.ref(runtimeInnerClass.getSuperclass()) : null;
 			return this.pluginContext.ref(parentClass, innerClassName, runtimeInnerClass.isInterface(), Modifier.isAbstract(runtimeInnerClass.getModifiers()), innerSuperClass);
 		} else {
+			System.out.println("reflectRuntimeInnerClass(else!, returning null)");
+
 			return null;
 		}
 	}
